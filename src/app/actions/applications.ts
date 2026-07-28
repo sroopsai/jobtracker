@@ -2,7 +2,7 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
-import { jobApplications, ApplicationStatus } from '@/db/schema';
+import { jobApplications, ApplicationStatus, JobSource } from '@/db/schema';
 import { eq, and, desc, ilike, or } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
@@ -18,6 +18,7 @@ export type ApplicationInput = {
   company: string;
   jobTitle: string;
   status: ApplicationStatus;
+  source?: JobSource | null;
   applicationDate: string;
   jobUrl?: string | null;
   location?: string | null;
@@ -25,13 +26,17 @@ export type ApplicationInput = {
   notes?: string | null;
 };
 
-export async function getApplications(search?: string, statusFilter?: string) {
+export async function getApplications(search?: string, statusFilter?: string, sourceFilter?: string) {
   const userId = await requireAuthUser();
 
   const conditions = [eq(jobApplications.userId, userId)];
 
   if (statusFilter && statusFilter !== 'All') {
     conditions.push(eq(jobApplications.status, statusFilter as ApplicationStatus));
+  }
+
+  if (sourceFilter && sourceFilter !== 'All') {
+    conditions.push(eq(jobApplications.source, sourceFilter as JobSource));
   }
 
   if (search && search.trim() !== '') {
@@ -102,6 +107,7 @@ export async function createApplication(data: ApplicationInput) {
       company: data.company.trim(),
       jobTitle: data.jobTitle.trim(),
       status: data.status || 'Applied',
+      source: data.source || 'LinkedIn',
       applicationDate: data.applicationDate,
       jobUrl: data.jobUrl ? data.jobUrl.trim() : null,
       location: data.location ? data.location.trim() : null,
@@ -124,6 +130,7 @@ export async function updateApplication(id: string, data: Partial<ApplicationInp
       ...(data.company && { company: data.company.trim() }),
       ...(data.jobTitle && { jobTitle: data.jobTitle.trim() }),
       ...(data.status && { status: data.status }),
+      ...(data.source && { source: data.source }),
       ...(data.applicationDate && { applicationDate: data.applicationDate }),
       ...(data.jobUrl !== undefined && { jobUrl: data.jobUrl ? data.jobUrl.trim() : null }),
       ...(data.location !== undefined && { location: data.location ? data.location.trim() : null }),

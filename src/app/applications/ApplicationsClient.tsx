@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { JobApplication, applicationStatuses } from '@/db/schema';
+import { JobApplication, applicationStatuses, jobSources } from '@/db/schema';
 import { ApplicationInput, createApplication, updateApplication, deleteApplication } from '@/app/actions/applications';
 import { StatusBadge } from '@/components/StatusBadge';
 import { ApplicationFormModal } from '@/components/ApplicationFormModal';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
-import { Plus, Search, Filter, Calendar, MapPin, DollarSign, ExternalLink, Edit2, Trash2, FileText, Briefcase } from 'lucide-react';
+import { Plus, Search, Filter, Calendar, MapPin, DollarSign, ExternalLink, Edit2, Trash2, FileText, Briefcase, Globe } from 'lucide-react';
 
 interface ApplicationsClientProps {
   initialApplications: JobApplication[];
@@ -15,6 +15,7 @@ interface ApplicationsClientProps {
 export function ApplicationsClient({ initialApplications }: ApplicationsClientProps) {
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
+  const [selectedSource, setSelectedSource] = useState<string>('All');
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingApp, setEditingApp] = useState<JobApplication | null>(null);
@@ -23,6 +24,7 @@ export function ApplicationsClient({ initialApplications }: ApplicationsClientPr
   // Client-side filtering for fast interactive feedback
   const filteredApps = initialApplications.filter((app) => {
     const matchesStatus = selectedStatus === 'All' || app.status === selectedStatus;
+    const matchesSource = selectedSource === 'All' || app.source === selectedSource;
     const term = search.toLowerCase().trim();
     const matchesSearch =
       !term ||
@@ -30,7 +32,7 @@ export function ApplicationsClient({ initialApplications }: ApplicationsClientPr
       app.jobTitle.toLowerCase().includes(term) ||
       (app.location && app.location.toLowerCase().includes(term)) ||
       (app.notes && app.notes.toLowerCase().includes(term));
-    return matchesStatus && matchesSearch;
+    return matchesStatus && matchesSource && matchesSearch;
   });
 
   const handleCreate = async (data: ApplicationInput) => {
@@ -79,17 +81,32 @@ export function ApplicationsClient({ initialApplications }: ApplicationsClientPr
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-slate-400" />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <Filter className="h-4 w-4 text-slate-400" />
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-2 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="All">All Statuses ({initialApplications.length})</option>
+              {applicationStatuses.map((st) => (
+                <option key={st} value={st}>
+                  {st} ({initialApplications.filter((a) => a.status === st).length})
+                </option>
+              ))}
+            </select>
+          </div>
+
           <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            value={selectedSource}
+            onChange={(e) => setSelectedSource(e.target.value)}
+            className="rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-2 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
-            <option value="All">All Statuses ({initialApplications.length})</option>
-            {applicationStatuses.map((st) => (
-              <option key={st} value={st}>
-                {st} ({initialApplications.filter((a) => a.status === st).length})
+            <option value="All">All Sources</option>
+            {jobSources.map((src) => (
+              <option key={src} value={src}>
+                {src} ({initialApplications.filter((a) => a.source === src).length})
               </option>
             ))}
           </select>
@@ -104,11 +121,11 @@ export function ApplicationsClient({ initialApplications }: ApplicationsClientPr
           </div>
           <h3 className="mt-4 text-base font-semibold text-white">No applications found</h3>
           <p className="mt-1 text-xs text-slate-400">
-            {search || selectedStatus !== 'All'
+            {search || selectedStatus !== 'All' || selectedSource !== 'All'
               ? 'Try adjusting your search terms or filters.'
               : 'Add your first job application to start tracking!'}
           </p>
-          {!(search || selectedStatus !== 'All') && (
+          {!(search || selectedStatus !== 'All' || selectedSource !== 'All') && (
             <button
               onClick={() => setIsAddOpen(true)}
               className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-indigo-500 transition"
@@ -128,7 +145,13 @@ export function ApplicationsClient({ initialApplications }: ApplicationsClientPr
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h3 className="text-lg font-bold text-white">{app.jobTitle}</h3>
-                    <p className="text-sm font-semibold text-indigo-400">{app.company}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-sm font-semibold text-indigo-400">{app.company}</p>
+                      <span className="inline-flex items-center gap-1 rounded-md bg-slate-800/80 px-2 py-0.5 text-[10px] font-semibold text-slate-300 border border-slate-700/60">
+                        <Globe className="h-3 w-3 text-cyan-400" />
+                        {app.source || 'LinkedIn'}
+                      </span>
+                    </div>
                   </div>
                   <StatusBadge status={app.status} />
                 </div>

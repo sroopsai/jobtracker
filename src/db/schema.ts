@@ -3,6 +3,17 @@ import { pgTable, text, timestamp, uuid, index } from 'drizzle-orm/pg-core';
 export const applicationStatuses = ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'] as const;
 export type ApplicationStatus = (typeof applicationStatuses)[number];
 
+export const jobSources = [
+  'LinkedIn',
+  'LinkedIn Easy Apply',
+  'Glassdoor',
+  'Indeed',
+  'Company Website',
+  'Referral',
+  'Other',
+] as const;
+export type JobSource = (typeof jobSources)[number];
+
 export const documentTypes = ['Resume', 'Cover Letter', 'Portfolio', 'Other'] as const;
 export type DocumentType = (typeof documentTypes)[number];
 
@@ -14,6 +25,7 @@ export const jobApplications = pgTable(
     company: text('company').notNull(),
     jobTitle: text('job_title').notNull(),
     status: text('status', { enum: applicationStatuses }).notNull().default('Applied'),
+    source: text('source', { enum: jobSources }).notNull().default('LinkedIn'),
     applicationDate: text('application_date').notNull(),
     jobUrl: text('job_url'),
     location: text('location'),

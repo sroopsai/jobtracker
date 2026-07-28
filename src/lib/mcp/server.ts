@@ -53,6 +53,11 @@ export function createJobTrackerMcpServer(userId: string) {
         .optional()
         .default('Applied')
         .describe('Current status of the application'),
+      source: z
+        .enum(['LinkedIn', 'LinkedIn Easy Apply', 'Glassdoor', 'Indeed', 'Company Website', 'Referral', 'Other'])
+        .optional()
+        .default('LinkedIn')
+        .describe('Where the job was found / applied from'),
       applicationDate: z
         .string()
         .optional()
@@ -71,7 +76,7 @@ export function createJobTrackerMcpServer(userId: string) {
         content: [
           {
             type: 'text',
-            text: `Successfully added job application for ${created.jobTitle} at ${created.company} (ID: ${created.id}).`,
+            text: `Successfully added job application for ${created.jobTitle} at ${created.company} via ${created.source} (ID: ${created.id}).`,
           },
         ],
       };
@@ -90,6 +95,9 @@ export function createJobTrackerMcpServer(userId: string) {
         .enum(['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'])
         .optional()
         .describe('New status for the application'),
+      source: z
+        .enum(['LinkedIn', 'LinkedIn Easy Apply', 'Glassdoor', 'Indeed', 'Company Website', 'Referral', 'Other'])
+        .optional(),
       applicationDate: z.string().optional(),
       jobUrl: z.string().optional(),
       location: z.string().optional(),

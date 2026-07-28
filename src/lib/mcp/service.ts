@@ -1,5 +1,5 @@
 import { db } from '@/db';
-import { jobApplications, ApplicationStatus, applicationStatuses, documents, DocumentType, documentTypes } from '@/db/schema';
+import { jobApplications, ApplicationStatus, applicationStatuses, JobSource, jobSources, documents, DocumentType, documentTypes } from '@/db/schema';
 import { eq, and, desc, ilike, or } from 'drizzle-orm';
 import { del } from '@vercel/blob';
 
@@ -8,6 +8,7 @@ export interface CreateApplicationParams {
   company: string;
   jobTitle: string;
   status?: ApplicationStatus;
+  source?: JobSource;
   applicationDate?: string;
   jobUrl?: string | null;
   location?: string | null;
@@ -21,6 +22,7 @@ export interface UpdateApplicationParams {
   company?: string;
   jobTitle?: string;
   status?: ApplicationStatus;
+  source?: JobSource;
   applicationDate?: string;
   jobUrl?: string | null;
   location?: string | null;
@@ -63,6 +65,7 @@ export async function mcpAddApplication(params: CreateApplicationParams) {
       company: params.company.trim(),
       jobTitle: params.jobTitle.trim(),
       status: params.status || 'Applied',
+      source: params.source || 'LinkedIn',
       applicationDate: params.applicationDate || today,
       jobUrl: params.jobUrl ? params.jobUrl.trim() : null,
       location: params.location ? params.location.trim() : null,
@@ -81,6 +84,7 @@ export async function mcpUpdateApplication(params: UpdateApplicationParams) {
       ...(params.company && { company: params.company.trim() }),
       ...(params.jobTitle && { jobTitle: params.jobTitle.trim() }),
       ...(params.status && { status: params.status }),
+      ...(params.source && { source: params.source }),
       ...(params.applicationDate && { applicationDate: params.applicationDate }),
       ...(params.jobUrl !== undefined && { jobUrl: params.jobUrl ? params.jobUrl.trim() : null }),
       ...(params.location !== undefined && { location: params.location ? params.location.trim() : null }),

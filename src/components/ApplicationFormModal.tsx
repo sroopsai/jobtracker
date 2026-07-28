@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ApplicationStatus, applicationStatuses } from '@/db/schema';
+import { ApplicationStatus, applicationStatuses, JobSource, jobSources } from '@/db/schema';
 import { ApplicationInput } from '@/app/actions/applications';
 import { X, Loader2 } from 'lucide-react';
 
@@ -14,6 +14,7 @@ interface ApplicationFormModalProps {
     company: string;
     jobTitle: string;
     status: ApplicationStatus;
+    source?: JobSource | null;
     applicationDate: string;
     jobUrl?: string | null;
     location?: string | null;
@@ -33,6 +34,7 @@ export function ApplicationFormModal({
   const [company, setCompany] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [status, setStatus] = useState<ApplicationStatus>('Applied');
+  const [source, setSource] = useState<JobSource>('LinkedIn');
   const [applicationDate, setApplicationDate] = useState('');
   const [jobUrl, setJobUrl] = useState('');
   const [location, setLocation] = useState('');
@@ -46,6 +48,7 @@ export function ApplicationFormModal({
       setCompany(initialData.company || '');
       setJobTitle(initialData.jobTitle || '');
       setStatus(initialData.status || 'Applied');
+      setSource(initialData.source || 'LinkedIn');
       setApplicationDate(initialData.applicationDate || new Date().toISOString().split('T')[0]);
       setJobUrl(initialData.jobUrl || '');
       setLocation(initialData.location || '');
@@ -55,6 +58,7 @@ export function ApplicationFormModal({
       setCompany('');
       setJobTitle('');
       setStatus('Applied');
+      setSource('LinkedIn');
       setApplicationDate(new Date().toISOString().split('T')[0]);
       setJobUrl('');
       setLocation('');
@@ -80,6 +84,7 @@ export function ApplicationFormModal({
         company: company.trim(),
         jobTitle: jobTitle.trim(),
         status,
+        source,
         applicationDate,
         jobUrl: jobUrl.trim() || null,
         location: location.trim() || null,
@@ -148,7 +153,7 @@ export function ApplicationFormModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="block text-xs font-semibold text-slate-300">
                 Status <span className="text-red-400">*</span>
@@ -161,6 +166,23 @@ export function ApplicationFormModal({
                 {applicationStatuses.map((st) => (
                   <option key={st} value={st}>
                     {st}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300">
+                Source <span className="text-red-400">*</span>
+              </label>
+              <select
+                value={source}
+                onChange={(e) => setSource(e.target.value as JobSource)}
+                className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                {jobSources.map((src) => (
+                  <option key={src} value={src}>
+                    {src}
                   </option>
                 ))}
               </select>

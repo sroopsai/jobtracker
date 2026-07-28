@@ -76,6 +76,10 @@ export async function POST(req: NextRequest) {
                   company: { type: 'string' },
                   jobTitle: { type: 'string' },
                   status: { type: 'string', enum: ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'] },
+                  source: {
+                    type: 'string',
+                    enum: ['LinkedIn', 'LinkedIn Easy Apply', 'Glassdoor', 'Indeed', 'Company Website', 'Referral', 'Other'],
+                  },
                   applicationDate: { type: 'string' },
                   jobUrl: { type: 'string' },
                   location: { type: 'string' },
@@ -95,6 +99,10 @@ export async function POST(req: NextRequest) {
                   company: { type: 'string' },
                   jobTitle: { type: 'string' },
                   status: { type: 'string', enum: ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected'] },
+                  source: {
+                    type: 'string',
+                    enum: ['LinkedIn', 'LinkedIn Easy Apply', 'Glassdoor', 'Indeed', 'Company Website', 'Referral', 'Other'],
+                  },
                   applicationDate: { type: 'string' },
                   jobUrl: { type: 'string' },
                   location: { type: 'string' },
