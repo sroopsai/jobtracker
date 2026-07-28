@@ -1,6 +1,7 @@
 import { db } from '@/db';
-import { jobApplications, ApplicationStatus, applicationStatuses } from '@/db/schema';
+import { jobApplications, ApplicationStatus, applicationStatuses, documents, DocumentType, documentTypes } from '@/db/schema';
 import { eq, and, desc, ilike, or } from 'drizzle-orm';
+import { del } from '@vercel/blob';
 
 export interface CreateApplicationParams {
   userId: string;
@@ -129,4 +130,50 @@ export async function mcpGetAnalytics(userId: string) {
     responseRatePercent: Number(responseRate),
     offerRatePercent: Number(offerRate),
   };
+}
+
+// MCP Document Functions
+export async function mcpListDocuments(userId: string, typeFilter?: string) {
+  const conditions = [eq(documents.userId, userId)];
+  if (typeFilter && typeFilter !== 'All' && documentTypes.includes(typeFilter as DocumentType)) {
+    conditions.push(eq(documents.type, typeFilter as DocumentType));
+  }
+
+  return await db
+    .select()
+    .from(documents)
+    .where(and(...conditions))
+    .orderBy(desc(documents.createdAt));
+}
+
+export async function mcpGetDocumentContent(userId: string, documentId: string) {
+  const [doc] = await db
+    .select()
+    .from(documents)
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
+
+  return doc || null;
+}
+
+export async function mcpDeleteDocument(userId: string, documentId: string) {
+  const [found] = await db
+    .select()
+    .from(documents)
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
+
+  if (!found) return false;
+
+  try {
+    if (found.fileUrl && found.fileUrl.includes('blob.vercel-storage.com')) {
+      await del(found.fileUrl);
+    }
+  } catch (e) {
+    console.error('Error deleting blob:', e);
+  }
+
+  await db
+    .delete(documents)
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
+
+  return true;
 }

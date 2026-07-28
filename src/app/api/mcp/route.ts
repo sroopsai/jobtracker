@@ -6,6 +6,9 @@ import {
   mcpUpdateApplication,
   mcpDeleteApplication,
   mcpGetAnalytics,
+  mcpListDocuments,
+  mcpGetDocumentContent,
+  mcpDeleteDocument,
 } from '@/lib/mcp/service';
 
 import { resolveUserIdFromToken } from '@/app/actions/mcpTokens';
@@ -35,10 +38,6 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
   return null;
 }
 
-/**
- * MCP HTTP / JSON-RPC Handler Endpoint
- * Allows HTTP clients, webhooks, or agents to execute MCP tools directly.
- */
 export async function POST(req: NextRequest) {
   const userId = await resolveUserId(req);
   if (!userId) {
@@ -120,6 +119,38 @@ export async function POST(req: NextRequest) {
               description: 'Get job application statistics.',
               inputSchema: { type: 'object', properties: {} },
             },
+            {
+              name: 'list_user_documents',
+              description: 'List uploaded resumes, cover letters, and portfolio files.',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  type: { type: 'string', enum: ['Resume', 'Cover Letter', 'Portfolio', 'Other'] },
+                },
+              },
+            },
+            {
+              name: 'get_document_content',
+              description: 'Fetch details and text content of a specific resume or cover letter.',
+              inputSchema: {
+                type: 'object',
+                required: ['documentId'],
+                properties: {
+                  documentId: { type: 'string' },
+                },
+              },
+            },
+            {
+              name: 'delete_user_document',
+              description: 'Delete an uploaded resume or cover letter document.',
+              inputSchema: {
+                type: 'object',
+                required: ['documentId'],
+                properties: {
+                  documentId: { type: 'string' },
+                },
+              },
+            },
           ],
         });
 
@@ -162,6 +193,29 @@ export async function POST(req: NextRequest) {
         if (toolName === 'get_job_analytics') {
           const result = await mcpGetAnalytics(userId);
           return NextResponse.json({ content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] });
+        }
+
+        if (toolName === 'list_user_documents') {
+          const result = await mcpListDocuments(userId, args.type);
+          return NextResponse.json({ content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] });
+        }
+
+        if (toolName === 'get_document_content') {
+          const result = await mcpGetDocumentContent(userId, args.documentId);
+          if (!result) {
+            return NextResponse.json(
+              { isError: true, content: [{ type: 'text', text: 'Document not found' }] },
+              { status: 404 }
+            );
+          }
+          return NextResponse.json({ content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] });
+        }
+
+        if (toolName === 'delete_user_document') {
+          const ok = await mcpDeleteDocument(userId, args.documentId);
+          return NextResponse.json({
+            content: [{ type: 'text', text: ok ? `Deleted document ${args.documentId}` : 'Failed to delete.' }],
+          });
         }
 
         return NextResponse.json({ error: `Unknown tool: ${toolName}` }, { status: 400 });

@@ -6,6 +6,9 @@ import {
   mcpUpdateApplication,
   mcpDeleteApplication,
   mcpGetAnalytics,
+  mcpListDocuments,
+  mcpGetDocumentContent,
+  mcpDeleteDocument,
 } from './service';
 
 export function createJobTrackerMcpServer(userId: string) {
@@ -169,6 +172,70 @@ export function createJobTrackerMcpServer(userId: string) {
     }
   );
 
+  // Tool 6: list_user_documents
+  server.tool(
+    'list_user_documents',
+    'List all uploaded resumes, cover letters, and portfolio documents.',
+    {
+      type: z
+        .enum(['Resume', 'Cover Letter', 'Portfolio', 'Other'])
+        .optional()
+        .describe('Filter by document type'),
+    },
+    async ({ type }) => {
+      const docs = await mcpListDocuments(userId, type);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(docs, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // Tool 7: get_document_content
+  server.tool(
+    'get_document_content',
+    'Get details and extracted text content of a specific uploaded resume or cover letter.',
+    {
+      documentId: z.string().uuid().describe('The UUID of the document'),
+    },
+    async ({ documentId }) => {
+      const doc = await mcpGetDocumentContent(userId, documentId);
+      if (!doc) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: 'Document not found or unauthorized.' }],
+        };
+      }
+      return {
+        content: [{ type: 'text', text: JSON.stringify(doc, null, 2) }],
+      };
+    }
+  );
+
+  // Tool 8: delete_user_document
+  server.tool(
+    'delete_user_document',
+    'Delete a resume or cover letter from storage and database.',
+    {
+      documentId: z.string().uuid().describe('The UUID of the document to delete'),
+    },
+    async ({ documentId }) => {
+      const deleted = await mcpDeleteDocument(userId, documentId);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: deleted ? `Successfully deleted document ${documentId}.` : 'Failed to delete document.',
+          },
+        ],
+      };
+    }
+  );
+
   // Resource 1: All Applications
   server.resource(
     'all_applications',
@@ -187,17 +254,17 @@ export function createJobTrackerMcpServer(userId: string) {
     }
   );
 
-  // Resource 2: Application Analytics
+  // Resource 2: All Documents
   server.resource(
-    'analytics',
-    'job-tracker://analytics',
+    'all_documents',
+    'job-tracker://documents',
     async (uri) => {
-      const stats = await mcpGetAnalytics(userId);
+      const docs = await mcpListDocuments(userId);
       return {
         contents: [
           {
             uri: uri.href,
-            text: JSON.stringify(stats, null, 2),
+            text: JSON.stringify(docs, null, 2),
             mimeType: 'application/json',
           },
         ],
@@ -205,17 +272,21 @@ export function createJobTrackerMcpServer(userId: string) {
     }
   );
 
-  // Prompt 1: Interview Prep Strategy
+  // Prompt 1: Tailor Cover Letter
   server.prompt(
-    'interview_prep',
+    'tailor_cover_letter',
     {
-      company: z.string().describe('Company name to prepare interview for'),
+      company: z.string().describe('Target company name'),
     },
     async ({ company }) => {
       const apps = await mcpListApplications(userId, company);
+      const docs = await mcpListDocuments(userId, 'Resume');
       const app = apps[0];
-      const jobDetails = app
-        ? `Company: ${app.company}\nTitle: ${app.jobTitle}\nLocation: ${app.location || 'N/A'}\nNotes: ${app.notes || 'None'}`
+      const resume = docs[0];
+
+      const resumeText = resume?.textContent || 'Candidate Resume Text Not Extracted';
+      const jobInfo = app
+        ? `Company: ${app.company}\nTitle: ${app.jobTitle}\nNotes: ${app.notes || 'N/A'}`
         : `Company: ${company}`;
 
       return {
@@ -224,7 +295,7 @@ export function createJobTrackerMcpServer(userId: string) {
             role: 'user',
             content: {
               type: 'text',
-              text: `Help me prepare for an upcoming interview. Here are my application details:\n\n${jobDetails}\n\nPlease generate:\n1. 5 technical & behavioral questions likely asked for this role.\n2. 3 insightful questions I should ask the interviewer.\n3. A summary of key points to emphasize based on my notes.`,
+              text: `Please draft a highly tailored cover letter using my resume information and job details below:\n\nTarget Job Details:\n${jobInfo}\n\nMy Resume Content:\n${resumeText}\n\nPlease generate a compelling, modern 3-paragraph cover letter tailored specifically to this role.`,
             },
           },
         ],

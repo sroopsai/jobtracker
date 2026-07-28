@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton, SignInButton, useAuth } from '@clerk/nextjs';
-import { Briefcase, LayoutDashboard, ListTodo, Cpu } from 'lucide-react';
+import { Briefcase, LayoutDashboard, ListTodo, Cpu, FileText } from 'lucide-react';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -12,6 +12,7 @@ export function Navbar() {
   const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Applications', href: '/applications', icon: ListTodo },
+    { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'MCP Hub', href: '/mcp', icon: Cpu },
   ];
 
