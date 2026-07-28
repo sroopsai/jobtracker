@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton, SignInButton, useAuth } from '@clerk/nextjs';
@@ -8,6 +9,7 @@ import { Briefcase, LayoutDashboard, ListTodo, Cpu, FileText } from 'lucide-reac
 export function Navbar() {
   const pathname = usePathname();
   const { isSignedIn } = useAuth();
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
 
   const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -16,12 +18,26 @@ export function Navbar() {
     { name: 'MCP Hub', href: '/mcp', icon: Cpu },
   ];
 
+  // Clear navigation indicator when pathname changes
+  useEffect(() => {
+    setNavigatingTo(null);
+  }, [pathname]);
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
+      {/* Instant Top Navigation Progress Indicator */}
+      {navigatingTo && (
+        <div className="absolute top-0 left-0 right-0 h-0.5 w-full overflow-hidden bg-slate-900">
+          <div className="h-full bg-gradient-to-r from-indigo-500 via-cyan-400 to-indigo-500 animate-pulse" />
+        </div>
+      )}
+
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
           <Link
             href={isSignedIn ? '/dashboard' : '/'}
+            prefetch={true}
+            onClick={() => setNavigatingTo(isSignedIn ? '/dashboard' : '/')}
             className="flex items-center gap-2.5 text-lg font-bold tracking-tight text-white transition hover:opacity-90"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 text-white shadow-lg shadow-indigo-500/20">
@@ -36,14 +52,21 @@ export function Navbar() {
             <nav className="hidden md:flex items-center gap-1">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
+                const isNavigating = navigatingTo === item.href;
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={true}
+                    onClick={() => {
+                      if (!isActive) setNavigatingTo(item.href);
+                    }}
                     className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-all ${
                       isActive
-                        ? 'bg-indigo-600/15 text-indigo-400 border border-indigo-500/30'
+                        ? 'bg-indigo-600/15 text-indigo-400 border border-indigo-500/30 font-semibold'
+                        : isNavigating
+                        ? 'bg-slate-900 text-indigo-300 border border-slate-700 animate-pulse'
                         : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
                     }`}
                   >
@@ -82,14 +105,21 @@ export function Navbar() {
         <div className="md:hidden flex items-center justify-around border-t border-slate-800/80 bg-slate-950/90 px-4 py-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            const isNavigating = navigatingTo === item.href;
             const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
+                onClick={() => {
+                  if (!isActive) setNavigatingTo(item.href);
+                }}
                 className={`flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-medium transition ${
                   isActive
                     ? 'bg-indigo-600/20 text-indigo-400 font-semibold'
+                    : isNavigating
+                    ? 'bg-slate-900 text-indigo-300 animate-pulse'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
