@@ -7,6 +7,7 @@ import { StatusChart } from '@/components/StatusChart';
 import { StatusBadge } from '@/components/StatusBadge';
 import { ApplicationFormModal } from '@/components/ApplicationFormModal';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
+import { ApplicationDetailModal } from '@/components/ApplicationDetailModal';
 import Link from 'next/link';
 import { Plus, Briefcase, Calendar, MapPin, ExternalLink, ArrowRight, CheckCircle2, XCircle, Users, Award, Clock } from 'lucide-react';
 
@@ -27,6 +28,7 @@ export function DashboardClient({ stats, recentApps }: DashboardClientProps) {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingApp, setEditingApp] = useState<JobApplication | null>(null);
   const [deletingApp, setDeletingApp] = useState<JobApplication | null>(null);
+  const [selectedDetailApp, setSelectedDetailApp] = useState<JobApplication | null>(null);
 
   const handleCreate = async (data: ApplicationInput) => {
     await createApplication(data);
@@ -183,7 +185,7 @@ export function DashboardClient({ stats, recentApps }: DashboardClientProps) {
         <div className="flex items-center justify-between pb-4 border-b border-slate-800/80">
           <div>
             <h2 className="text-lg font-bold text-white">Recent Applications</h2>
-            <p className="text-xs text-slate-400">Your latest submitted job applications</p>
+            <p className="text-xs text-slate-400">Your latest submitted job applications (Click any to view full details)</p>
           </div>
           <Link
             href="/applications"
@@ -210,10 +212,14 @@ export function DashboardClient({ stats, recentApps }: DashboardClientProps) {
         ) : (
           <div className="mt-4 divide-y divide-slate-800/60">
             {recentApps.map((app) => (
-              <div key={app.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                key={app.id}
+                onClick={() => setSelectedDetailApp(app)}
+                className="cursor-pointer flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between hover:bg-slate-900/40 px-3 rounded-xl transition"
+              >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-white">{app.jobTitle}</h3>
+                    <h3 className="font-semibold text-white hover:text-indigo-300 transition">{app.jobTitle}</h3>
                     <span className="text-slate-500">•</span>
                     <span className="text-sm text-slate-300 font-medium">{app.company}</span>
                   </div>
@@ -233,6 +239,7 @@ export function DashboardClient({ stats, recentApps }: DashboardClientProps) {
                         href={app.jobUrl}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
                         className="flex items-center gap-1 text-indigo-400 hover:underline"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
@@ -246,13 +253,19 @@ export function DashboardClient({ stats, recentApps }: DashboardClientProps) {
                   <StatusBadge status={app.status} />
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => setEditingApp(app)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingApp(app);
+                      }}
                       className="rounded-lg px-2.5 py-1 text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition"
                     >
                       Edit
                     </button>
                     <button
-                      onClick={() => setDeletingApp(app)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletingApp(app);
+                      }}
                       className="rounded-lg px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-950/40 hover:text-red-300 transition"
                     >
                       Delete
@@ -264,6 +277,15 @@ export function DashboardClient({ stats, recentApps }: DashboardClientProps) {
           </div>
         )}
       </div>
+
+      {/* Application Detail Modal */}
+      <ApplicationDetailModal
+        app={selectedDetailApp}
+        isOpen={!!selectedDetailApp}
+        onClose={() => setSelectedDetailApp(null)}
+        onEdit={(app) => setEditingApp(app)}
+        onDelete={(app) => setDeletingApp(app)}
+      />
 
       {/* Add Modal */}
       <ApplicationFormModal

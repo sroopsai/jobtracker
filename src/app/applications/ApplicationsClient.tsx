@@ -6,6 +6,7 @@ import { ApplicationInput, createApplication, updateApplication, deleteApplicati
 import { StatusBadge } from '@/components/StatusBadge';
 import { ApplicationFormModal } from '@/components/ApplicationFormModal';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
+import { ApplicationDetailModal } from '@/components/ApplicationDetailModal';
 import { Plus, Search, Filter, Calendar, MapPin, DollarSign, ExternalLink, Edit2, Trash2, FileText, Briefcase, Globe } from 'lucide-react';
 
 interface ApplicationsClientProps {
@@ -20,6 +21,7 @@ export function ApplicationsClient({ initialApplications }: ApplicationsClientPr
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingApp, setEditingApp] = useState<JobApplication | null>(null);
   const [deletingApp, setDeletingApp] = useState<JobApplication | null>(null);
+  const [selectedDetailApp, setSelectedDetailApp] = useState<JobApplication | null>(null);
 
   // Client-side filtering for fast interactive feedback
   const filteredApps = initialApplications.filter((app) => {
@@ -56,7 +58,7 @@ export function ApplicationsClient({ initialApplications }: ApplicationsClientPr
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Applications</h1>
           <p className="mt-1 text-sm text-slate-400">
-            Manage and track all your job applications in one place.
+            Manage and track all your job applications in one place. Click any card to view full details.
           </p>
         </div>
         <button
@@ -139,12 +141,15 @@ export function ApplicationsClient({ initialApplications }: ApplicationsClientPr
           {filteredApps.map((app) => (
             <div
               key={app.id}
-              className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-sm transition hover:border-slate-700"
+              onClick={() => setSelectedDetailApp(app)}
+              className="cursor-pointer flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-sm transition hover:border-indigo-500/50 hover:bg-slate-900/90 hover:shadow-xl"
             >
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-lg font-bold text-white">{app.jobTitle}</h3>
+                    <h3 className="text-lg font-bold text-white group-hover:text-indigo-300 transition">
+                      {app.jobTitle}
+                    </h3>
                     <div className="flex items-center gap-2 mt-0.5">
                       <p className="text-sm font-semibold text-indigo-400">{app.company}</p>
                       <span className="inline-flex items-center gap-1 rounded-md bg-slate-800/80 px-2 py-0.5 text-[10px] font-semibold text-slate-300 border border-slate-700/60">
@@ -183,6 +188,7 @@ export function ApplicationsClient({ initialApplications }: ApplicationsClientPr
                         href={app.jobUrl}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
                         className="text-indigo-400 hover:underline"
                       >
                         Job Posting
@@ -196,25 +202,29 @@ export function ApplicationsClient({ initialApplications }: ApplicationsClientPr
                     <div className="flex items-center gap-1 font-semibold text-slate-400">
                       <FileText className="h-3.5 w-3.5" /> Notes:
                     </div>
-                    <p className="whitespace-pre-wrap">{app.notes}</p>
+                    <p className="whitespace-pre-wrap line-clamp-2">{app.notes}</p>
                   </div>
                 )}
               </div>
 
               <div className="mt-5 flex items-center justify-between border-t border-slate-800/80 pt-3 text-[11px] text-slate-500">
-                <span>
-                  Updated {new Date(app.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                </span>
+                <span className="text-indigo-400/80 font-medium">Click to view full details →</span>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setEditingApp(app)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingApp(app);
+                    }}
                     className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-300 hover:bg-slate-800 transition"
                   >
                     <Edit2 className="h-3.5 w-3.5 text-indigo-400" />
                     Edit
                   </button>
                   <button
-                    onClick={() => setDeletingApp(app)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeletingApp(app);
+                    }}
                     className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-950/40 transition"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -226,6 +236,15 @@ export function ApplicationsClient({ initialApplications }: ApplicationsClientPr
           ))}
         </div>
       )}
+
+      {/* Application Detail Modal */}
+      <ApplicationDetailModal
+        app={selectedDetailApp}
+        isOpen={!!selectedDetailApp}
+        onClose={() => setSelectedDetailApp(null)}
+        onEdit={(app) => setEditingApp(app)}
+        onDelete={(app) => setDeletingApp(app)}
+      />
 
       {/* Add Modal */}
       <ApplicationFormModal
