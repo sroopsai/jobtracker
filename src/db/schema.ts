@@ -24,5 +24,20 @@ export const jobApplications = pgTable(
   ]
 );
 
+export const mcpApiKeys = pgTable(
+  'mcp_api_keys',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: text('user_id').notNull(),
+    key: text('key').notNull().unique(),
+    name: text('name').notNull().default('Default MCP Token'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('mcp_user_id_idx').on(table.userId),
+  ]
+);
+
 export type JobApplication = typeof jobApplications.$inferSelect;
 export type NewJobApplication = typeof jobApplications.$inferInsert;
+export type McpApiKey = typeof mcpApiKeys.$inferSelect;
